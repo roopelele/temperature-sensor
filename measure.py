@@ -30,7 +30,7 @@ def read_sensors():
                 f.close()
                 if "YES" in data:
                     (discard, sep, reading) = data.partition(' t=')
-                    values.append(float(reading) / 1000.0)
+                    values.append({'name': deviceid, 'value': float(reading) / 1000.0})
                 else:
                     continue
             except:
@@ -51,9 +51,9 @@ def main():
     minute = str(t.tm_min)
     if len(minute) < 2:
         minute = "0" + minute
-    for i, value in enumerate(data['values']):
+    for i, item in enumerate(data['values']):
         with open(f"{FOLDER}/logs/{d}_{i}", 'a') as outfile:
-            outfile.write(f"{str(t.tm_hour)}:{minute}={value}\n")
+            outfile.write(f"{str(t.tm_hour)}:{minute}={item['value']}\n")
     data['clock'] = f"{str(t.tm_hour)}:{minute}"
     with open(FOLDER + "/logs/CURRENT.json", 'w') as outfile:
         json.dump(data, outfile)

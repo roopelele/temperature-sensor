@@ -20,7 +20,7 @@ def main():
     d = time.strftime("%Y-%m-%d", t)
     idx = 0
     while True:
-        filename = f"{PATH}/logs/{d}_{idx}.json"
+        filename = f"{PATH}/logs/{d}_{idx}"
         if not os.path.exists(filename):
             break
         with open(filename, "r") as infile:

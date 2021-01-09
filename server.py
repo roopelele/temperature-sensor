@@ -25,7 +25,7 @@ def hello_world():
     text += "<body style=\"background-color:#404040;\">\n"
     text += "  <div>\n"
     text +=f"    <p style=\"color:#aaaaaa;\">Current time: {data['clock']}</p>\n"
-    text +=f"    <p style=\"color:#aaaaaa;\">Current temperature: {data['values'][0]}</p>\n"
+    text +=f"    <p style=\"color:#aaaaaa;\">Current temperature: {data['values'][0]['value']}</p>\n"
     text += "    <img src=\"http://192.168.100.12:5000/graph/\">\n"
     text += "  </div>\n"
     text += "</body>\n"
@@ -33,4 +33,4 @@ def hello_world():
 
 @app.route('/graph/')
 def get_image():
-    return send_file(FOLDER + "/graphs/" + GetDate(-1) + ".png", mimetype='image/gif')
+    return send_file(f"{FOLDER}/graphs/{GetDate(-1)}_0.png", mimetype='image/gif')
