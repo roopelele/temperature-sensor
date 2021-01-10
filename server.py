@@ -8,6 +8,7 @@ TIMEZONE = 3
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 
+@app.route('current', methods=['GET'])
 def GetCurrentData():
     with open(FOLDER + "/logs/CURRENT.json", 'r') as infile:
         return json.load(infile)
