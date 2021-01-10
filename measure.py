@@ -5,13 +5,14 @@ import os
 import sys
 import json
 import RPi.GPIO as GPIO
+import requests
 
 FOLDER = "/home/pi/temperature"
+URL = "http://192.168.100.12:5000/update/"
 TIMEZONE = 3
 PIN = 14
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
 
 
 def read_sensors():
@@ -40,6 +41,14 @@ def read_sensors():
     else:
         return {'success': False}
 
+def send_data(d):
+    print(f"url: {URL},\ndata:{d}")
+    try:
+        x = requests.post(URL, json=d)
+        print(x)
+    except Exception as e:
+        print(e)
+        return
 
 def main():
     int_t = int(time.time() + (3600 * TIMEZONE))
@@ -57,6 +66,6 @@ def main():
     data['clock'] = f"{str(t.tm_hour)}:{minute}"
     with open(FOLDER + "/logs/CURRENT.json", 'w') as outfile:
         json.dump(data, outfile)
-
+    send_data(data)
 
 main()
