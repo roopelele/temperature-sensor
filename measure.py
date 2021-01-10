@@ -9,7 +9,7 @@ import requests
 
 FOLDER = "/home/pi/temperature"
 URL = "http://192.168.100.12:5000/update/"
-TIMEZONE = 3
+TIMEZONE = 2
 PIN = 14
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)

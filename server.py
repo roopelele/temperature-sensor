@@ -1,15 +1,17 @@
 from flask import Flask, send_file, request, redirect, json
+from flask_cors import CORS, cross_origin
 import time
 import json
 import sys
 import os
 
 FOLDER = "/home/pi/temperature"
-TIMEZONE = 3
+TIMEZONE = 2
 data = {}
 history = []
 
 app = Flask(__name__)
+cors = CORS(app)
 
 def load_config():
     with open("config.json", 'r') as infile:
@@ -26,7 +28,7 @@ def update_data():
             history = []
         data = request.json
         history.append(data)
-    return redirect('/')
+    return redirect('/current/')
 
 @app.route('/current/', methods=['GET'])
 def get_current_data():
@@ -47,10 +49,6 @@ def get_history():
         mimetype='application/json'
     )
     return response
-
-@app.route('/')
-def main_page():
-    redirect('/current/')
 
 @app.route('/config/')
 def get_config():
