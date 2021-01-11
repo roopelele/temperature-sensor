@@ -64,8 +64,6 @@ def main():
         with open(f"{FOLDER}/logs/{d}_{i}", 'a') as outfile:
             outfile.write(f"{str(t.tm_hour)}:{minute}={item['value']}\n")
     data['clock'] = f"{str(t.tm_hour)}:{minute}"
-    with open(FOLDER + "/logs/CURRENT.json", 'w') as outfile:
-        json.dump(data, outfile)
     send_data(data)
 
 main()

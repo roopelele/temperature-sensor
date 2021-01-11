@@ -32,7 +32,7 @@ def calc_stats(filename):
         print("len(temps) == 0")
         return
     save_data = [filename.split('/')[-1], str(average(temps)), str(max(temps)), str(min(temps))]
-    save_file = f"{PATH}/logs/{filename.split('/')[-1][:4]}.csv"
+    save_file = f"{PATH}/logs/data.csv"
     if not path.isfile(save_file):
         with open(save_file, "w") as outfile:
             outfile.write("DATE:AVG,MAX,MIN\n")
@@ -44,14 +44,13 @@ def calc_all():
     files = listdir(PATH + "/logs")
     files.sort()
     for filename in files:
-        if filename in ["CURRENT.json", "2020.txt"]:
+        if filename in ["CURRENT.json", "data.csv", "2020.csv", "2021.csv"]:
             continue
         calc_stats(PATH + "/logs/" + filename)
 
 
 def main():
-    filename = f"{PATH}/logs/{get_date()}"
+    filename = f"{PATH}/logs/{get_date()}_0"
     calc_stats(filename)
-
 
 main()
