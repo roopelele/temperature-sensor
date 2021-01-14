@@ -16,22 +16,31 @@ data = {'success': False, 'values': [], 'clock': ""}
 history = []
 
 def load_config():
+    print("Loading config...", file=sys.stderr)
     with open(f"{FOLDER}/config.json", 'r') as infile:
         return json.load(infile)
 
-
 def load_old():
+    newHistory = []
     int_t = int(time.time() + (3600 * TIMEZONE))
     t = time.gmtime(int_t)
     d = time.strftime("%Y-%m-%d", t)
-    rtn = {"temps": [], "times": []}
-    with open(f"{FOLDER}/logs/{d}_0", 'r') as datafile:
-        tmp = datafile.readlines()
-    for entry in tmp:
-        s = entry.rstrip("\n").split('=')
-        rtn["times"].append(s[0])
-        rtn["temps"].append(s[1])
-    return rtn
+    for infile in os.listdir(f"{FOLDER}/logs"):
+        if d in infile:
+            tmp = []
+            try:
+                with open(f"{FOLDER}/logs/{infile}", 'r') as datafile:
+                    tmp = datafile.readlines()
+            except IOError:
+                print("IOError")
+                continue
+            deviceid = infile.split('_')[-1]
+            newHistory.append({"name": deviceid, "temps": [], "times": []})
+            for entry in tmp:
+                s = entry.rstrip("\n").split('=')
+                newHistory[-1]["times"].append(s[0])
+                newHistory[-1]["temps"].append(s[1])
+    return newHistory
 
 @app.route('/', methods=["GET"])
 def main():
@@ -41,7 +50,6 @@ def main():
         content_type='text/plain',
         headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
     )
-    
 
 @app.route('/get_data/', methods=["POST", "OPTIONS"])
 def get_data():
@@ -52,7 +60,7 @@ def get_data():
         content_type='text/plain',
         headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
     )
-    print(f"\nclient ip: {request.remote_addr}\nreceived form: {request.json}\n")
+    #print(f"\nclient ip: {request.remote_addr}\nreceived form: {request.json}\n")
     data = request.json
     start = data['start']
     end = data['end']
@@ -71,41 +79,32 @@ def get_data():
         headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
     )
 
-
 @app.route('/update/', methods=['POST'])
 def update_data():
-    if request.remote_addr == '192.168.100.12':
-        global data, history
-        int_t = int(time.time() + (3600 * TIMEZONE))
-        t = time.gmtime(int_t)
-        if t.tm_hour == 0 and t.tm_minute <= 1:
-            history = []
-        data = request.json
-        if not data["success"]:
+    if request.remote_addr != '192.168.100.12': # IP not allowed, return 401
+        return app.response_class(
+            response="client-not-allowed",
+            status=401,
+            content_type='text/plain'
+        )
+    else:
+        temp = request.json
+        if not temp["success"]:
+            print("error in update")
             return app.response_class(
-            response="ERROR",
-            status=404,
+                response="ERROR",
+                status=404,
+                content_type='text/plain',
+                headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
+            )
+        global data
+        data = temp
+        return app.response_class(
+            response="OK",
+            status=200,
             content_type='text/plain',
             headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
         )
-        for val in data['values']:
-            print(val, file=sys.stderr)
-            new = True 
-            for i in range(len(history)):
-                if history[i]["name"] == val["name"]:
-                    history[i]["temps"].append(val["value"])
-                    history[i]["times"].append(data["clock"])
-                    new = False
-            if new == False:
-                continue
-            
-    return app.response_class(
-        response="OK",
-        status=200,
-        content_type='text/plain',
-        headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-    )
-
 
 @app.route('/current/', methods=['GET'])
 def get_current_data():
@@ -118,8 +117,13 @@ def get_current_data():
     )
 
 @app.route('/history/', methods=["GET"])
-
 def get_history():
+    global history
+    tmp = load_old()
+    if tmp != []:
+        history = tmp
+    else:
+        print("error, using old history data")
     d = {'config': config, 'data': history}
     return app.response_class(
         response=json.dumps(d),
@@ -140,6 +144,4 @@ def get_config():
 config = load_config()
 
 if __name__ == "__main__":
-    old = load_old()
-    history.append({"name": config[0]["id"], "temps": old["temps"], "times": old["times"]})
     app.run(debug=DEBUG_MODE, host='0.0.0.0')

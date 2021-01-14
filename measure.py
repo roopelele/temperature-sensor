@@ -60,9 +60,9 @@ def main():
     minute = str(t.tm_min)
     if len(minute) < 2:
         minute = "0" + minute
-    for i, item in enumerate(data['values']):
-        with open(f"{FOLDER}/logs/{d}_{i}", 'a') as outfile:
-            outfile.write(f"{str(t.tm_hour)}:{minute}={item['value']}\n")
+    for val in data['values']:
+        with open(f"{FOLDER}/logs/{d}_{val['name']}", 'a') as outfile:
+            outfile.write(f"{str(t.tm_hour)}:{minute}={val['value']}\n")
     data['clock'] = f"{str(t.tm_hour)}:{minute}"
     send_data(data)
 
