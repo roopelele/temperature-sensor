@@ -9,11 +9,13 @@ app = Flask(__name__)
 CORS(app, origins='*')
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+UPDATEIP = "192.168.1.39"
 FOLDER = "/home/pi/temperature"
 TIMEZONE = 2
-DEBUG_MODE = True
+DEBUG_MODE = False
 data = {'success': False, 'values': [], 'clock': ""}
 history = []
+canReload = True
 
 def load_config():
     print("Loading config...", file=sys.stderr)
@@ -81,13 +83,15 @@ def get_data():
 
 @app.route('/update/', methods=['POST'])
 def update_data():
-    if request.remote_addr != '192.168.100.12': # IP not allowed, return 401
+    if request.remote_addr != UPDATEIP: # IP not allowed, return 401
         return app.response_class(
             response="client-not-allowed",
             status=401,
             content_type='text/plain'
         )
     else:
+        global canReload
+        canReload = True
         temp = request.json
         if not temp["success"]:
             print("error in update")
@@ -118,12 +122,15 @@ def get_current_data():
 
 @app.route('/history/', methods=["GET"])
 def get_history():
-    global history
-    tmp = load_old()
-    if tmp != []:
-        history = tmp
-    else:
-        print("error, using old history data")
+    global canReload
+    if canReload:
+        canReload = False
+        global history
+        tmp = load_old()
+        if tmp != []:
+            history = tmp
+        else:
+            print("error, using old history data")
     d = {'config': config, 'data': history}
     return app.response_class(
         response=json.dumps(d),

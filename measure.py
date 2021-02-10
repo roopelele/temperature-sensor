@@ -8,7 +8,7 @@ import RPi.GPIO as GPIO
 import requests
 
 FOLDER = "/home/pi/temperature"
-URL = "http://192.168.100.12:5000/update/"
+URL = "http://192.168.1.39:5000/update/"
 TIMEZONE = 2
 PIN = 14
 GPIO.setmode(GPIO.BCM)
