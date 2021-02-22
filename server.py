@@ -15,11 +15,15 @@ TIMEZONE = 2
 DEBUG_MODE = False
 data = {'success': False, 'values': [], 'clock': ""}
 history = []
-canReload = True
+lastReload = 0
 
 def load_config():
     print("Loading config...", file=sys.stderr)
     with open(f"{FOLDER}/config.json", 'r') as infile:
+        return json.load(infile)
+
+def load_current():
+    with open(os.path.join(FOLDER, 'logs', 'current.json'), 'r') as infile:
         return json.load(infile)
 
 def load_old():
@@ -53,65 +57,10 @@ def main():
         headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
     )
 
-@app.route('/get_data/', methods=["POST", "OPTIONS"])
-def get_data():
-    if request.method == "OPTIONS": # CORS preflight
-        return app.response_class(
-            response="OK",
-            status=200,
-            content_type='text/plain',
-            headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-        )
-    #print(f"\nclient ip: {request.remote_addr}\nreceived form: {request.json}\n")
-    d = request.json
-    start = d['start']
-    end = d['end']
-    with open(f"{FOLDER}/logs/data.csv") as datafile:
-        lines = datafile.readlines()
-    resp = {"temps": [], "times": []}
-    for line in lines:
-        tmp = line.rstrip("\n").rstrip("_0").split(',')
-        if start <= tmp[0] <= end:
-            resp["temps"].append(tmp[1])
-            resp["times"].append(tmp[0])
-    return app.response_class(
-        response=json.dumps(resp),
-        status=200,
-        content_type='application/json',
-        headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-    )
-
-@app.route('/update/', methods=['POST'])
-def update_data():
-    global canReload, data
-    if request.remote_addr != UPDATEIP: # IP not allowed, return 401
-        return app.response_class(
-            response="client-not-allowed",
-            status=401,
-            content_type='text/plain'
-        )
-    else:
-        canReload = True
-        temp = request.json
-        if not temp["success"]:
-            print("error in update")
-            return app.response_class(
-                response="ERROR",
-                status=404,
-                content_type='text/plain',
-                headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-            )
-        data = temp
-        return app.response_class(
-            response="OK",
-            status=200,
-            content_type='text/plain',
-            headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-        )
-
 @app.route('/current/', methods=['GET'])
 def get_current_data():
     global data
+    data = load_current()
     d = {'config': config, 'data': data}
     return app.response_class(
         response=json.dumps(d),
@@ -122,10 +71,9 @@ def get_current_data():
 
 @app.route('/history/', methods=["GET"])
 def get_history():
-    global canReload
-    if canReload:
-        canReload = False
-        global history
+    global lastReload, history
+    if int(time.time()) - lastReload > 60:
+        lastReload = int(time.time())
         tmp = load_old()
         if tmp != []:
             history = tmp

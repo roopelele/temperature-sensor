@@ -5,10 +5,8 @@ import os
 import sys
 import json
 import RPi.GPIO as GPIO
-import requests
 
-FOLDER = "/home/pi/temperature"
-URL = "http://192.168.1.39:5000/update/"
+FOLDER = "/home/pi/temperature/"
 TIMEZONE = 2
 PIN = 14
 GPIO.setmode(GPIO.BCM)
@@ -22,7 +20,7 @@ def read_sensors():
     for deviceid in w1_devices:
         rtn[deviceid] = {}
         rtn[deviceid]['temp_c'] = None
-        device_data_file = "/sys/bus/w1/devices/" + deviceid + "/w1_slave"
+        device_data_file = f"/sys/bus/w1/devices/{deviceid}/w1_slave"
         if os.path.isfile(device_data_file):
             try:
                 f = open(device_data_file, "r")
@@ -40,15 +38,6 @@ def read_sensors():
     else:
         return {'success': False}
 
-def send_data(d):
-    print(f"url: {URL},\ndata:{d}")
-    try:
-        x = requests.post(URL, json=d)
-        print(x)
-    except Exception as e:
-        print(e)
-        return
-
 def main():
     int_t = int(time.time() + (3600 * TIMEZONE))
     t = time.gmtime(int_t)
@@ -60,9 +49,10 @@ def main():
     if len(minute) < 2:
         minute = "0" + minute
     for val in data['values']:
-        with open(f"{FOLDER}/logs/{d}_{val['name']}", 'a') as outfile:
+        with open(os.path.join(FOLDER, 'logs', f"{d}_{val['name']}"), 'a') as outfile:
             outfile.write(f"{str(t.tm_hour)}:{minute}={val['value']}\n")
     data['clock'] = f"{str(t.tm_hour)}:{minute}"
-    send_data(data)
+    with open(os.path.join(FOLDER, 'logs', 'current.json'), 'w') as outfile:
+        json.dump(data, outfile)
 
 main()
