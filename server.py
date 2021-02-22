@@ -57,15 +57,15 @@ def main():
 def get_data():
     if request.method == "OPTIONS": # CORS preflight
         return app.response_class(
-        response="OK",
-        status=200,
-        content_type='text/plain',
-        headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
-    )
+            response="OK",
+            status=200,
+            content_type='text/plain',
+            headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
+        )
     #print(f"\nclient ip: {request.remote_addr}\nreceived form: {request.json}\n")
-    data = request.json
-    start = data['start']
-    end = data['end']
+    d = request.json
+    start = d['start']
+    end = d['end']
     with open(f"{FOLDER}/logs/data.csv") as datafile:
         lines = datafile.readlines()
     resp = {"temps": [], "times": []}
@@ -83,6 +83,7 @@ def get_data():
 
 @app.route('/update/', methods=['POST'])
 def update_data():
+    global canReload, data
     if request.remote_addr != UPDATEIP: # IP not allowed, return 401
         return app.response_class(
             response="client-not-allowed",
@@ -90,7 +91,6 @@ def update_data():
             content_type='text/plain'
         )
     else:
-        global canReload
         canReload = True
         temp = request.json
         if not temp["success"]:
@@ -101,7 +101,6 @@ def update_data():
                 content_type='text/plain',
                 headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"},
             )
-        global data
         data = temp
         return app.response_class(
             response="OK",
@@ -112,6 +111,7 @@ def update_data():
 
 @app.route('/current/', methods=['GET'])
 def get_current_data():
+    global data
     d = {'config': config, 'data': data}
     return app.response_class(
         response=json.dumps(d),

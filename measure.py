@@ -12,7 +12,6 @@ URL = "http://192.168.1.39:5000/update/"
 TIMEZONE = 2
 PIN = 14
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def read_sensors():
